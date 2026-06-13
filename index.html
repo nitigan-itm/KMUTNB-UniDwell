@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ระบบจำลองการจัดการข้อมูลห้องพักสำหรับอาจารย์และเจ้าหน้าที่ มจพ. ปราจีนบุรี สำหรับผู้ดูแลระบบคนเดียว">
+    <title>ระบบจัดการค่าห้องพัก - มจพ. ปราจีนบุรี</title>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Phosphor Icons CDN -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <aside>
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="ph-fill ph-house-line"></i>
+            </div>
+            <div>
+                <h2 class="sidebar-title">มจพ. ปราจีนฯ</h2>
+                <p class="sidebar-subtitle">ระบบค่าเช่าห้องพัก</p>
+            </div>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li class="menu-item active" data-tab="dashboard" id="navDashboard">
+                <a href="#dashboard">
+                    <i class="ph-bold ph-chart-pie-slice"></i> แดชบอร์ดสรุปผล
+                </a>
+            </li>
+            <li class="menu-item" data-tab="residents" id="navResidents">
+                <a href="#residents">
+                    <i class="ph-bold ph-users-three"></i> ทะเบียนผู้พักอาศัย
+                </a>
+            </li>
+            <li class="menu-item" data-tab="payments" id="navPayments">
+                <a href="#payments">
+                    <i class="ph-bold ph-currency-circle-dollar"></i> บันทึกการจ่ายเงิน
+                </a>
+            </li>
+            <li class="menu-item" data-tab="reports" id="navReports">
+                <a href="#reports">
+                    <i class="ph-bold ph-file-text"></i> สรุปรายงานรายเดือน
+                </a>
+            </li>
+            <li class="menu-item" data-tab="settings" id="navSettings">
+                <a href="#settings">
+                    <i class="ph-bold ph-gear"></i> ตั้งค่าระบบ
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="admin-profile">
+                <div class="admin-avatar">AD</div>
+                <div class="admin-info">
+                    <span class="admin-name admin-name-span">ผู้ดูแลระบบ</span>
+                    <span class="admin-role">Admin</span>
+                </div>
+            </div>
+            <button class="theme-toggle-btn" id="themeToggle" title="สลับธีม สว่าง/มืด" aria-label="Toggle dark and light theme">
+                <i class="ph-bold ph-moon"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main>
+        
+        <!-- Top Toolbar Header -->
+        <header>
+            <div class="page-title">
+                <h1 id="mainHeading">ระบบจัดการห้องพักบุคลากร</h1>
+                <p>มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าพระนครเหนือ วิทยาเขตปราจีนบุรี</p>
+            </div>
+            <div class="header-actions">
+                <div class="filter-group">
+                    <label for="selectedMonth" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">ประจำเดือน:</label>
+                    <input type="month" id="selectedMonth" class="select-input" style="min-width: 170px;" value="2026-06">
+                </div>
+            </div>
+        </header>
+
+        <!-- PRINT HEADER (ONLY VISIBLE ON PRINT) -->
+        <div class="report-header-print">
+            <h2>รายงานค่าเช่าห้องพักบุคลากร มจพ. ปราจีนบุรี</h2>
+            <p>ประจำเดือน: <span id="printReportMonth">มิถุนายน 2569</span></p>
+            <hr style="margin: 1rem 0;">
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 1: DASHBOARD -->
+        <!-- ========================================== -->
+        <section class="tab-content active" id="dashboard-view">
+            <!-- Metrics Cards Grid -->
+            <div class="dashboard-grid">
+                <div class="stat-card primary" id="cardOccupied">
+                    <div class="stat-card-header">
+                        <span>ห้องพักที่มีผู้เช่า</span>
+                        <div class="stat-icon">
+                            <i class="ph-bold ph-bed"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="statOccupiedRooms">8</div>
+                    <div class="stat-desc">จำนวนผู้เช่าทั้งหมดในระบบ</div>
+                </div>
+
+                <div class="stat-card success" id="cardPaid">
+                    <div class="stat-card-header">
+                        <span>ชำระเงินแล้วเดือนนี้</span>
+                        <div class="stat-icon">
+                            <i class="ph-bold ph-check-square"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="statPaidAmount">6,000 ฿</div>
+                    <div class="stat-desc" id="statPaidDesc">ชำระแล้ว 4 จาก 8 ห้อง</div>
+                </div>
+
+                <div class="stat-card danger" id="cardUnpaid">
+                    <div class="stat-card-header">
+                        <span>ค้างชำระในเดือนนี้</span>
+                        <div class="stat-icon">
+                            <i class="ph-bold ph-warning-circle"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="statUnpaidAmount">6,000 ฿</div>
+                    <div class="stat-desc" id="statUnpaidDesc">ค้างชำระ 4 ห้อง ในเดือนนี้</div>
+                </div>
+
+                <div class="stat-card warning" id="cardOutstanding">
+                    <div class="stat-card-header">
+                        <span>ยอดค้างชำระสะสมทั้งหมด</span>
+                        <div class="stat-icon">
+                            <i class="ph-bold ph-money"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="statOutstandingTotal">9,000 ฿</div>
+                    <div class="stat-desc">ยอดหนี้สะสมค้างรับรวมทุกเดือน</div>
+                </div>
+            </div>
+
+            <!-- Charts and Quick Tables -->
+            <div class="section-grid">
+                <!-- Revenue Chart -->
+                <div class="card" id="chartRevenueCard">
+                    <div class="card-title">
+                        <div class="card-title-text">
+                            <i class="ph-bold ph-chart-bar" style="color: var(--accent-primary);"></i>
+                            <span>สถิติการรับเงินและยอดค้างชำระ (MoM)</span>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Department breakdown -->
+                <div class="card" id="chartFacultyCard">
+                    <div class="card-title">
+                        <div class="card-title-text">
+                            <i class="ph-bold ph-chart-pie" style="color: var(--accent-info);"></i>
+                            <span>สัดส่วนผู้เช่าตามคณะ</span>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="departmentChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Unpaid list -->
+                <div class="card section-full" id="unpaidListCard">
+                    <div class="card-title">
+                        <div class="card-title-text">
+                            <i class="ph-bold ph-hourglass-high" style="color: var(--accent-danger);"></i>
+                            <span>รายการค้างชำระในเดือนนี้ (กดรับเงินได้ทันที)</span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ห้อง</th>
+                                    <th>ชื่อ - นามสกุล</th>
+                                    <th>คณะ/สังกัด</th>
+                                    <th style="text-align: right;">ค่าเช่าห้อง</th>
+                                    <th>การจัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="unpaidDashboardTable">
+                                <!-- Dynamic unpaid rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: RESIDENT REGISTRY -->
+        <!-- ========================================== -->
+        <section class="tab-content" id="residents-view">
+            <div class="card">
+                <div class="controls-bar">
+                    <div class="search-input-wrapper">
+                        <i class="ph-bold ph-magnifying-glass"></i>
+                        <input type="text" id="searchResident" class="search-input" placeholder="ค้นหาตามชื่อ, นามสกุล หรือ เลขห้อง...">
+                    </div>
+                    <div class="filter-group">
+                        <select id="filterPosition" class="select-input" aria-label="กรองประเภทตำแหน่ง">
+                            <option value="">ทุกตำแหน่ง</option>
+                            <option value="อาจารย์">อาจารย์</option>
+                            <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
+                        </select>
+                        <select id="filterFaculty" class="select-input" aria-label="กรองคณะสังกัด">
+                            <option value="">ทุกคณะ/ฝ่าย</option>
+                            <option value="FITM">คณะเทคโนโลยีและการจัดการอุตสาหกรรม</option>
+                            <option value="วิทยาศาสตร์ประยุกต์">คณะวิทยาศาสตร์ประยุกต์</option>
+                            <option value="CIT">วิทยาลัยเทคโนโลยีอุตสาหกรรม</option>
+                            <option value="สำนักงานวิทยาเขต">สำนักงานวิทยาเขต</option>
+                        </select>
+                        <button class="btn btn-primary" id="addResidentBtn">
+                            <i class="ph-bold ph-user-plus"></i> เพิ่มผู้พักใหม่
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ห้อง</th>
+                                <th>ชื่อ - นามสกุล</th>
+                                <th>ตำแหน่ง</th>
+                                <th>คณะ/สำนักงาน</th>
+                                <th>ภาควิชา/งาน</th>
+                                <th>จัดการข้อมูล</th>
+                            </tr>
+                        </thead>
+                        <tbody id="residentsTableBody">
+                            <!-- Dynamic rows loaded from localStorage -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: PAYMENTS RECORDING -->
+        <!-- ========================================== -->
+        <section class="tab-content" id="payments-view">
+            <div class="card">
+                <div class="controls-bar">
+                    <div class="search-input-wrapper">
+                        <i class="ph-bold ph-magnifying-glass"></i>
+                        <input type="text" id="searchPayment" class="search-input" placeholder="ค้นหาห้องพัก หรือชื่อ...">
+                    </div>
+                    <div class="filter-group">
+                        <label for="billingMonthSelect" style="font-size: 0.85rem; color: var(--text-secondary);">เดือน:</label>
+                        <input type="month" id="billingMonthSelect" class="select-input" value="2026-06">
+                        
+                        <select id="filterPaymentStatus" class="select-input" aria-label="กรองสถานะชำระเงิน">
+                            <option value="">ทุกสถานะ</option>
+                            <option value="paid">จ่ายเงินแล้ว</option>
+                            <option value="unpaid">ค้างชำระ</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ห้อง</th>
+                                <th>ผู้พักอาศัย</th>
+                                <th style="text-align: right;">ค่าเช่าห้อง</th>
+                                <th style="text-align: right;">ยอดรวมต้องจ่าย</th>
+                                <th>สถานะจ่ายเงิน</th>
+                                <th>บันทึกชำระ / สลิป</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paymentsTableBody">
+                            <!-- Dynamic rows with Pay/Unpay toggler -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 4: MONTHLY REPORTS -->
+        <!-- ========================================== -->
+        <section class="tab-content" id="reports-view">
+            <div class="card">
+                <div class="controls-bar">
+                    <div>
+                        <h3>รายงานทางการเงินรายเดือน</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary);">สรุปยอดเงินค้างรับและเงินที่รับเข้าจริง ประจำเดือน <span id="reportTitleMonth">มิถุนายน 2569</span></p>
+                    </div>
+                    <div class="filter-group">
+                        <input type="month" id="reportMonthSelect" class="select-input" value="2026-06">
+                        <button class="btn btn-primary" onclick="printReport()" id="printReportBtn">
+                            <i class="ph-bold ph-printer"></i> พิมพ์รายงานสรุป
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid-2" style="margin: 1rem 0;">
+                    <div class="card" style="padding: 1.25rem;">
+                        <h4 style="font-weight: 500; color: var(--text-secondary);">ข้อมูลสรุปทั่วไป</h4>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>จำนวนผู้พักอาศัยทั้งหมด</span>
+                                <strong id="repTotalRooms">8</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>ห้องที่ชำระเงินเรียบร้อยแล้ว</span>
+                                <strong style="color: var(--accent-secondary);" id="repPaidCount">4</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>ห้องค้างชำระเงิน</span>
+                                <strong style="color: var(--accent-danger);" id="repUnpaidCount">4</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding: 1.25rem;">
+                        <h4 style="font-weight: 500; color: var(--text-secondary);">สรุปทางการเงิน</h4>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>รายรับที่พึงได้ (Expected)</span>
+                                <strong id="repExpected">12,000 ฿</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>รับชำระแล้ว (Collected)</span>
+                                <strong style="color: var(--accent-secondary);" id="repCollected">6,000 ฿</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>ค้างชำระสุทธิ (Outstanding)</span>
+                                <strong style="color: var(--accent-danger);" id="repOutstanding">6,000 ฿</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ลำดับ</th>
+                                <th>ห้อง</th>
+                                <th>ชื่อ - นามสกุล</th>
+                                <th style="text-align: right;">ค่าเช่าห้อง</th>
+                                <th style="text-align: right;">ยอดรวมสุทธิ</th>
+                                <th>สถานะการชำระ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody">
+                            <!-- Dynamic summary rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 5: SETTINGS -->
+        <!-- ========================================== -->
+        <section class="tab-content" id="settings-view">
+            <div class="grid-2">
+                <div class="card">
+                    <h3>ตั้งค่าตัวแปรและข้อมูลในระบบ</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">ตั้งค่าพื้นฐานสำหรับค่าห้องพัก และข้อมูลที่จะไปแสดงผลบนหัวใบแจ้งหนี้/ใบเสร็จ</p>
+                    
+                    <form id="settingsForm">
+                        <div class="form-group">
+                            <label for="setUnivName">ชื่อหน่วยงาน / ชื่อวิทยาเขต (สำหรับใบแจ้งหนี้)</label>
+                            <input type="text" id="setUnivName" class="form-control" value="มจพ. วิทยาเขตปราจีนบุรี">
+                        </div>
+                        <div class="form-group">
+                            <label for="setAdminName">ชื่อผู้ดูแลระบบ (สำหรับลงนามใบเสร็จ)</label>
+                            <input type="text" id="setAdminName" class="form-control" value="สมคิด แสนดี">
+                        </div>
+                        <div class="form-group">
+                            <label for="setRoomRent">ค่าเช่าห้องพื้นฐาน (บาท / เดือน)</label>
+                            <input type="number" id="setRoomRent" class="form-control" value="1500" min="0">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" id="saveSettingsBtn">
+                            <i class="ph-bold ph-floppy-disk"></i> บันทึกข้อมูลการตั้งค่า
+                        </button>
+                    </form>
+                </div>
+
+                <div class="card" style="justify-content: space-between;">
+                    <div>
+                        <h3>การกู้คืนและรีเซ็ตระบบ</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.6;">
+                            ระบบนี้จัดเก็บข้อมูลทั้งหมดในหน่วยความจำของบราวเซอร์ของคุณ (Local Storage) หากต้องการรีเซ็ตประวัติ และข้อมูลการจำลองทั้งหมดกลับเป็นค่าเริ่มต้น (Mockup Data) สามารถกดปุ่มด้านล่างได้
+                        </p>
+                    </div>
+                    <button class="btn btn-danger" style="background-color: var(--accent-danger); margin-top: 2rem;" onclick="resetAllData()" id="resetDataBtn">
+                        <i class="ph-bold ph-arrow-counter-clockwise"></i> รีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้น
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- MODAL: ADD / EDIT RESIDENT -->
+    <!-- ========================================== -->
+    <div class="modal-overlay" id="residentModalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="residentModalTitle">เพิ่มผู้เช่ารายใหม่</h3>
+                <button class="close-modal-btn" id="closeResidentModal">&times;</button>
+            </div>
+            <form id="residentForm">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="resRoom">หมายเลขห้องพัก *</label>
+                            <input type="text" id="resRoom" class="form-control" placeholder="เช่น 101" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="resPosition">ตำแหน่งบุคคล *</label>
+                            <select id="resPosition" class="form-control" required>
+                                <option value="อาจารย์">อาจารย์</option>
+                                <option value="เจ้าหน้าที่">เจ้าหน้าที่</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="resName">ชื่อจริง *</label>
+                            <input type="text" id="resName" class="form-control" placeholder="กรอกชื่อ" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="resSurname">นามสกุล *</label>
+                            <input type="text" id="resSurname" class="form-control" placeholder="กรอกนามสกุล" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="resFaculty">คณะ / หน่วยงานสังกัด *</label>
+                        <select id="resFaculty" class="form-control" required>
+                            <option value="คณะเทคโนโลยีและการจัดการอุตสาหกรรม (FITM)">คณะเทคโนโลยีและการจัดการอุตสาหกรรม (FITM)</option>
+                            <option value="คณะวิทยาศาสตร์ประยุกต์">คณะวิทยาศาสตร์ประยุกต์</option>
+                            <option value="วิทยาลัยเทคโนโลยีอุตสาหกรรม (CIT)">วิทยาลัยเทคโนโลยีอุตสาหกรรม (CIT)</option>
+                            <option value="สำนักงานวิทยาเขตปราจีนบุรี">สำนักงานวิทยาเขตปราจีนบุรี</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="resDept">ภาควิชา / สังกัดกลุ่มงาน</label>
+                        <input type="text" id="resDept" class="form-control" placeholder="เช่น เทคโนโลยีสารสนเทศ (IT)">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="cancelResidentBtn">ยกเลิก</button>
+                    <button type="submit" class="btn btn-primary" id="saveResidentBtn">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL: VIEW INVOICE & RECEIPT -->
+    <!-- ========================================== -->
+    <div class="modal-overlay" id="invoiceModalOverlay">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">ใบเสร็จ/ใบแจ้งหนี้ประจำเดือน</h3>
+                <button class="close-modal-btn" id="closeInvoiceModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="invoicePrintArea">
+                    <!-- Dynamic Receipt Code -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('invoiceModalOverlay').classList.remove('active')">ปิดหน้าต่าง</button>
+                <button class="btn btn-primary" onclick="printReceipt()" id="printReceiptBtn">
+                    <i class="ph-bold ph-printer"></i> พิมพ์เอกสาร
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Javascripts -->
+    <script src="app.js"></script>
+</body>
+</html>
